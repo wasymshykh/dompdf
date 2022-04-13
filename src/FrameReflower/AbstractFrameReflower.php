@@ -547,7 +547,7 @@ abstract class AbstractFrameReflower
      *
      * @return string The resulting string
      */
-    protected function _parse_content(): string
+    protected function _parse_content($return_id = false)
     {
         // The `content` property will be returned parsed into its components
         $style = $this->_frame->get_style();
@@ -661,7 +661,11 @@ abstract class AbstractFrameReflower
             }
         }
 
-        return $text;
+        if (!$return_id) {
+            return $text;
+        }
+
+        return ['text' => $text, 'id' => $counter_id??''];
     }
 
     /**
@@ -687,10 +691,16 @@ abstract class AbstractFrameReflower
         }
 
         if ($frame->get_node()->nodeName === "dompdf_generated") {
-            $content = $this->_parse_content();
+            $content = $this->_parse_content(true);
+
+            if (is_array($content)) {
+                $content_counter_id = $content['id'];
+                $content = $content['text'];
+            }
 
             if ($content !== "") {
-                $node = $frame->get_node()->ownerDocument->createTextNode($content);
+
+                $node = $frame->get_node()->ownerDocument->createTextNode($content. ($content_counter_id && !empty($content_counter_id)?("{{".$content_counter_id."}}"):""));
 
                 $new_style = $style->get_stylesheet()->create_style();
                 $new_style->inherit($style);
@@ -699,11 +709,12 @@ abstract class AbstractFrameReflower
                 $new_frame->set_style($new_style);
 
                 Factory::decorate_frame($new_frame, $frame->get_dompdf(), $frame->get_root());
-                
+
                 if ($frame->get_first_child() != null) {
                     $frame->remove_child($frame->get_first_child());
                 }
                 $frame->append_child($new_frame);
+
             }
         }
 
