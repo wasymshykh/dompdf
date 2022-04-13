@@ -699,6 +699,10 @@ abstract class AbstractFrameReflower
                 $new_frame->set_style($new_style);
 
                 Factory::decorate_frame($new_frame, $frame->get_dompdf(), $frame->get_root());
+                
+                if ($frame->get_first_child() != null) {
+                    $frame->remove_child($frame->get_first_child());
+                }
                 $frame->append_child($new_frame);
             }
         }
